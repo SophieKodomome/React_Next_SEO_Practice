@@ -1,55 +1,89 @@
 "use client";
 
 import { Button, TextField } from "@mui/material";
-import { useState } from "react";
+import gsap from "gsap";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
+  const [articles, setArticles] = useState<{ title: string; description: string; content: string }[]>([]);
+
+  // Run GSAP animation on mount
+  useEffect(() => {
+    gsap.from("#title", {
+      opacity: 0,
+      x: 80,
+      ease: "power3.out",
+      duration: 1.5,
+    });
+    gsap.from("#article", {
+      opacity: 0,
+      x: 80,
+      ease: "power3.out",
+      duration: 1.5,
+      delay: 0.4,
+    });
+    gsap.from("#aside", {
+      opacity: 0,
+      x: 80,
+      ease: "power3.out",
+      duration: 1.5,
+      delay: 0.8,
+    });
+
+    // Fetch saved articles on mount
+    const existingArticles = localStorage.getItem("articles");
+    if (existingArticles) {
+      setArticles(JSON.parse(existingArticles));
+    }
+  }, []); // Runs once when component mounts
 
   function handleSubmit() {
-    const articleDetails = {
-      title,
-      description,
-      content,
-    };
+    if (!title) {
+      alert("Please enter a title!");
+      return;
+    }
 
-    // Convert the object to a JSON string
-    const jsonString = JSON.stringify(articleDetails, null, 2);
+    const articleDetails = { title, description, content };
 
-    // Create a Blob (Binary Large Object) with JSON content
+    // Retrieve existing articles from local storage
+    const existingArticles = localStorage.getItem("articles");
+    const articlesArray = existingArticles ? JSON.parse(existingArticles) : [];
+
+    // Add the new article to the array
+    articlesArray.push(articleDetails);
+
+    // Store updated articles back to local storage
+    localStorage.setItem("articles", JSON.stringify(articlesArray));
+
+    // Update the state to reflect the new article
+    setArticles(articlesArray);
+
+  }
+
+  function handleViewJson(article: { title: string; description: string; content: string }) {
+    const jsonString = JSON.stringify(article, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
-
-    // Create a temporary link element
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = articleDetails.title+".json"; // Set the filename
-    document.body.appendChild(a); // Append link to body
-    a.click(); // Trigger download
-    document.body.removeChild(a); // Remove the link
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank"); // Open JSON in a new tab
   }
 
   return (
     <div className="mx-16">
-      <header className="my-8">
+      <header id="title" className="my-8">
         <h1 className="text-6xl uppercase text-[--primary]">Guugle</h1>
-        <p className="text-xl text-[--black]">
-          The website that creates websites
-        </p>
+        <p className="text-xl text-[--black]">The website that creates websites</p>
       </header>
       <main className="flex flex-row space-x-8">
-        <article className="w-4/12 border-2 border-[--primary] bg-[--background] p-4 rounded-md shadow-lg">
-          <h2 className="text-4xl text-[--primary] mb-8">
-            Create your website
-          </h2>
+        <article
+          id="article"
+          className="w-4/12 border-2 border-[--primary] bg-[--background] p-4 rounded-md shadow-lg"
+        >
+          <h2 className="text-4xl text-[--primary] mb-8">Create your website</h2>
           <section className="flex flex-col space-y-4">
-            <TextField
-              label="Title"
-              variant="outlined"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <TextField label="Title" variant="outlined" value={title} onChange={(e) => setTitle(e.target.value)} />
             <TextField
               label="Description"
               multiline
@@ -67,29 +101,33 @@ export default function Home() {
               onChange={(e) => setContent(e.target.value)}
             />
             <Button variant="contained" onClick={handleSubmit}>
-              Create & Download JSON
+              Save Article
             </Button>
           </section>
         </article>
-        <aside className="w-8/12 border-2 border-[--primary] rounded-md shadow-lg">
-          <h2 className="text-4xl text-[--white] p-4 bg-[--primary]">
-            Your Articles
-          </h2>
+
+        <aside id="aside" className="w-8/12 border-2 border-[--primary] rounded-md shadow-lg">
+          <h2 className="text-4xl text-[--white] p-4 bg-[--primary]">Your Articles</h2>
           <section className="flex flex-col">
-            <section className="p-4 border-b-2 border-[--primary]">
-              <a
-                className="text-[--primary] hover:border-b-2 hover:border-[--primary] transition-all duration-300 ease-out"
-                href="http://"
-              >
-                an example of links
-              </a>
-            </section>
+            {articles.length > 0 ? (
+              articles.map((article, index) => (
+                <section key={index} className="p-4 border-b-2 border-[--primary]">
+                  <button
+                    className="text-[--primary] hover:border-b-2 hover:border-[--primary] transition-all duration-300 ease-out"
+                    onClick={() => handleViewJson(article)}
+                  >
+                    {article.title}
+                  </button>
+                </section>
+              ))
+            ) : (
+              <p className="p-4 text-gray-500">No articles saved yet.</p>
+            )}
           </section>
         </aside>
       </main>
-      <footer className="mt-32 text-gray-500 justify-self-center">
-        &copy; made by me
-      </footer>
+
+      <footer className="mt-32 text-gray-500 justify-self-center">&copy; made by me</footer>
     </div>
   );
 }
