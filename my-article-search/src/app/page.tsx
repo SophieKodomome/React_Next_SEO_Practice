@@ -3,16 +3,17 @@
 import { Button, TextField } from "@mui/material";
 import gsap from "gsap";
 import { useEffect, useState } from "react";
+import { useGoTo } from "./@hooks/linkHooks";
 
 export default function Home() {
+  const goTo = useGoTo();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
   const [articles, setArticles] = useState<{ title: string; description: string; content: string }[]>([]);
 
-  // Run GSAP animation on mount
   useEffect(() => {
-    gsap.from("#title", {
+    /*gsap.from("#title", {
       opacity: 0,
       x: 80,
       ease: "power3.out",
@@ -31,14 +32,13 @@ export default function Home() {
       ease: "power3.out",
       duration: 1.5,
       delay: 0.8,
-    });
+    });*/
 
-    // Fetch saved articles on mount
     const existingArticles = localStorage.getItem("articles");
     if (existingArticles) {
       setArticles(JSON.parse(existingArticles));
     }
-  }, []); // Runs once when component mounts
+  }, []);
 
   function handleSubmit() {
     if (!title) {
@@ -48,27 +48,22 @@ export default function Home() {
 
     const articleDetails = { title, description, content };
 
-    // Retrieve existing articles from local storage
     const existingArticles = localStorage.getItem("articles");
     const articlesArray = existingArticles ? JSON.parse(existingArticles) : [];
 
-    // Add the new article to the array
     articlesArray.push(articleDetails);
 
-    // Store updated articles back to local storage
     localStorage.setItem("articles", JSON.stringify(articlesArray));
 
-    // Update the state to reflect the new article
     setArticles(articlesArray);
 
   }
 
   function handleViewJson(article: { title: string; description: string; content: string }) {
-    const jsonString = JSON.stringify(article, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank"); // Open JSON in a new tab
+    localStorage.setItem("selectedArticle", JSON.stringify(article));
+    goTo("/pageArticle");
   }
+  
 
   return (
     <div className="mx-16">
